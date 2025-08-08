@@ -1,0 +1,23 @@
+# Override file for local development customizations
+# This file is automatically loaded by docker-compose and can be used
+# to override settings in docker-compose.yml for local development
+
+services:
+  web:
+    environment:
+      # Add any additional environment variables for local development
+      - RAILS_LOG_LEVEL=debug
+      - RAILS_LOG_TO_STDOUT=true
+    # Uncomment to enable debugging
+    # ports:
+    #   - "1234:1234"  # For ruby-debug-ide
+    volumes:
+      # Mount the entire project for live code reloading
+      - .:/rails
+      # Cache gems to speed up rebuilds
+      - bundle_cache:/usr/local/bundle
+      # Cache bootsnap for faster boot times
+      - bootsnap_cache:/usr/local/bundle/_bootsnap
+
+volumes:
+  bootsnap_cache:
