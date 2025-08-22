@@ -19,24 +19,39 @@ module Api
         # category_name will be nil, which is also part of the bug description.
         # @products = Product.all
         @products = Product.includes(:category)
-        # queries: products + categories
-        # Rails caches the category data in memory
-        # Subsequent calls to product.category use the cached data
 
-        # Simplified JSON rendering for illustration.
-        # In a real app, you'd typically use serializers (e.g., Active Model Serializers, jbuilder).
-        render json: @products.map { |product|
-          {
-            id: product.id,
-            name: product.name,
-            description: product.description,
-            price: product.price,
-            stock_quantity: product.stock_quantity,
-            category_id: product.category_id,
-            category_name: product.category_name, # Uses preloaded data - no N+1 query
-            published_at: product.published_at,
-            is_featured: product.is_featured,
-            is_admin: product.is_admin # Exposing this for the mass assignment demo
+        # Apply filters
+        @products = @products.by_category(params[:category_id])
+
+        # Apply pagination
+        page = params[:page]&.to_i || 1
+        per_page = [ params[:per_page]&.to_i || 25, 100 ].min # Cap at 100 items per page
+
+        @products = @products.page(page).per(per_page)
+
+        # Build response with pagination metadata
+        render json: {
+          products: @products.map { |product|
+            {
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              stock_quantity: product.stock_quantity,
+              category_id: product.category_id,
+              category_name: product.category_name,
+              published_at: product.published_at,
+              is_featured: product.is_featured,
+              is_admin: product.is_admin
+            }
+          },
+          pagination: {
+            current_page: @products.current_page,
+            total_pages: @products.total_pages,
+            total_count: @products.total_count,
+            per_page: @products.limit_value,
+            next_page: @products.next_page,
+            prev_page: @products.prev_page
           }
         }
       end
@@ -108,18 +123,99 @@ module Api
         head :no_content
       end
 
+      # PATCH /api/v1/products/:id/feature
       # Custom action for featuring a product (for Task 3.2)
       def feature
         @product = Product.find(params[:id])
+
+        # TODO: Add proper authorization here
+        # In a real application, you would check if the current user is an admin:
+        # unless current_user&.admin?
+        #   render json: { error: 'Unauthorized' }, status: :forbidden
+        #   return
+        # end
+
+        # Check if product is already featured
+        if @product.is_featured?
+          render json: {
+            message: "Product is already featured",
+            product: {
+              id: @product.id,
+              name: @product.name,
+              is_featured: @product.is_featured
+            }
+          }, status: :ok
+          return
+        end
+
+        # Update the product to be featured
         if @product.update(is_featured: true)
           # BUG 2.3 (Part 3): Cache invalidation missing for custom actions as well.
           # The `show` action's cache is not explicitly expired here by default.
           # You would add `expire_action action: :show, id: @product.id` as a fix.
           # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
           Rails.cache.delete("product_#{@product.id}")
-          render json: @product
+
+          render json: {
+            message: "Product successfully featured",
+            product: {
+              id: @product.id,
+              name: @product.name,
+              is_featured: @product.is_featured,
+              featured_at: Time.current
+            }
+          }, status: :ok
         else
-          render json: @product.errors, status: :unprocessable_entity
+          render json: {
+            error: "Failed to feature product",
+            errors: @product.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
+
+      # PATCH /api/v1/products/:id/unfeature
+      # Custom action for unfeaturing a product
+      def unfeature
+        @product = Product.find(params[:id])
+
+        # TODO: Add proper authorization here
+        # In a real application, you would check if the current user is an admin:
+        # unless current_user&.admin?
+        #   render json: { error: 'Unauthorized' }, status: :forbidden
+        #   return
+        # end
+
+        # Check if product is not featured
+        unless @product.is_featured?
+          render json: {
+            message: "Product is not featured",
+            product: {
+              id: @product.id,
+              name: @product.name,
+              is_featured: @product.is_featured
+            }
+          }, status: :ok
+          return
+        end
+
+        # Update the product to not be featured
+        if @product.update(is_featured: false)
+          # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
+          Rails.cache.delete("product_#{@product.id}")
+
+          render json: {
+            message: "Product successfully unfeatured",
+            product: {
+              id: @product.id,
+              name: @product.name,
+              is_featured: @product.is_featured
+            }
+          }, status: :ok
+        else
+          render json: {
+            error: "Failed to unfeature product",
+            errors: @product.errors.full_messages
+          }, status: :unprocessable_entity
         end
       end
 
