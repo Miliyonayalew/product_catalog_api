@@ -68,7 +68,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
               published_at: { type: :string, format: 'date-time', example: '2023-07-13T00:00:00.000Z' },
               is_featured: { type: :boolean, example: false }
             },
-            required: ['name', 'price', 'stock_quantity']
+            required: [ 'name', 'price', 'stock_quantity' ]
           }
         }
       }

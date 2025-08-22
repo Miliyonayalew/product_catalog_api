@@ -36,7 +36,7 @@ RSpec.describe 'Api::V1::Categories', swagger_doc: 'v1/swagger.json' do
             properties: {
               name: { type: :string, example: 'New Category' }
             },
-            required: ['name']
+            required: [ 'name' ]
           }
         }
       }
