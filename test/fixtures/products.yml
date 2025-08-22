@@ -37,23 +37,3 @@ tshirt:
   published_at: <%= Time.current %>
   is_featured: true
   is_admin: false
-
-no_category_product:
-  name: Product With Missing Category
-  description: This product has no assigned category
-  price: 10.00
-  stock_quantity: 10
-  category: 
-  published_at: <%= Time.current %>
-  is_featured: false
-  is_admin: false
-
-admin_product:
-  name: Secret Admin Product
-  description: Only admins should manage this
-  price: 999.00
-  stock_quantity: 1
-  category: electronics
-  published_at: <%= Time.current %>
-  is_featured: false
-  is_admin: true

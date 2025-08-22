@@ -14,4 +14,4 @@ class CreateProducts < ActiveRecord::Migration[5.0] # Adjust migration version i
       t.timestamps
     end
   end
-end 
+end

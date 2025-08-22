@@ -26,6 +26,10 @@ class Product < ApplicationRecord
     category&.name
   end
 
+  def is_featured?
+    is_featured
+  end
+
   # Scopes for filtering
   scope :by_category, ->(category_id) { where(category_id: category_id) if category_id.present? }
   scope :featured, -> { where(is_featured: true) }

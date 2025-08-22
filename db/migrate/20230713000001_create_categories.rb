@@ -6,4 +6,4 @@ class CreateCategories < ActiveRecord::Migration[5.0] # Adjust migration version
       t.timestamps
     end
   end
-end 
+end
