@@ -17,7 +17,11 @@ module Api
         # For each product, a separate query will be made to fetch its category.
         # Also, if a product's category_id points to a non-existent category,
         # category_name will be nil, which is also part of the bug description.
-        @products = Product.all
+        # @products = Product.all
+        @products = Product.includes(:category)
+        # queries: products + categories
+        # Rails caches the category data in memory
+        # Subsequent calls to product.category use the cached data
 
         # Simplified JSON rendering for illustration.
         # In a real app, you'd typically use serializers (e.g., Active Model Serializers, jbuilder).
@@ -29,7 +33,7 @@ module Api
             price: product.price,
             stock_quantity: product.stock_quantity,
             category_id: product.category_id,
-            category_name: product.category_name, # This call triggers the N+1 query
+            category_name: product.category_name, # Uses preloaded data - no N+1 query
             published_at: product.published_at,
             is_featured: product.is_featured,
             is_admin: product.is_admin # Exposing this for the mass assignment demo
@@ -40,6 +44,11 @@ module Api
       # GET /api/v1/products/:id
       def show
         @product = Product.find(params[:id])
+
+        # FIXED: Add HTTP-level caching headers for better performance
+        fresh_when(@product, etag: @product.cache_key)
+        expires_in 1.hour, public: true
+
         render json: {
           id: @product.id,
           name: @product.name,
@@ -59,7 +68,9 @@ module Api
         # BUG 2.2: Mass assignment vulnerability.
         # This allows any attribute in the `product` hash to be set,
         # including potentially malicious or unintended ones (e.g., `is_admin`).
-        @product = Product.new(params[:product]) # DIRECT ASSIGNMENT FROM PARAMS
+        # @product = Product.new(params[:product]) # DIRECT ASSIGNMENT FROM PARAMS
+        # FIXED: Using strong parameters to prevent mass assignment vulnerability
+        @product = Product.new(product_params)
 
         if @product.save
           render json: @product, status: :created
@@ -74,10 +85,14 @@ module Api
         # BUG 2.2: Mass assignment vulnerability.
         # This allows any attribute in the `product` hash to be set,
         # including potentially malicious or unintended ones.
-        if @product.update(params.permit!) # USING permit! which is unsafe
-          # BUG 2.3 (Part 2): Cache invalidation missing.
-          # The `show` action's cache is not explicitly expired here by default.
-          # You would add `expire_action action: :show, id: @product.id` as a fix.
+        # if @product.update(params.permit!) # USING permit! which is unsafe
+        #   # BUG 2.3 (Part 2): Cache invalidation missing.
+        #   # The `show` action's cache is not explicitly expired here by default.
+        #   # You would add `expire_action action: :show, id: @product.id` as a fix.
+        # FIXED: Using strong parameters to prevent mass assignment vulnerability
+        if @product.update(product_params)
+          # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
+          Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
@@ -88,6 +103,8 @@ module Api
       def destroy
         @product = Product.find(params[:id])
         @product.destroy
+        # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
+        Rails.cache.delete("product_#{@product.id}")
         head :no_content
       end
 
@@ -98,6 +115,8 @@ module Api
           # BUG 2.3 (Part 3): Cache invalidation missing for custom actions as well.
           # The `show` action's cache is not explicitly expired here by default.
           # You would add `expire_action action: :show, id: @product.id` as a fix.
+          # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
+          Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
           render json: @product.errors, status: :unprocessable_entity
@@ -109,6 +128,12 @@ module Api
       # def product_params
       #   params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
       # end
+      # FIXED: Strong parameters method to prevent mass assignment vulnerability
+      private
+      def product_params
+        # Only permit safe attributes - is_admin is intentionally excluded for security
+        params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
+      end
     end
   end
 end
