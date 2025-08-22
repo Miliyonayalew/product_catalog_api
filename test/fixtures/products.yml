@@ -1,0 +1,59 @@
+laptop:
+  name: Laptop Pro X
+  description: Powerful laptop for professionals
+  price: 1200.00
+  stock_quantity: 50
+  category: electronics
+  published_at: <%= Time.current %>
+  is_featured: false
+  is_admin: false
+
+headphones:
+  name: Wireless Headphones
+  description: High-fidelity sound
+  price: 79.99
+  stock_quantity: 150
+  category: electronics
+  published_at: <%= 1.day.ago %>
+  is_featured: false
+  is_admin: false
+
+book:
+  name: The Great Novel
+  description: A captivating story
+  price: 15.99
+  stock_quantity: 200
+  category: books
+  published_at: <%= Time.current %>
+  is_featured: false
+  is_admin: false
+
+tshirt:
+  name: Vintage T-Shirt
+  description: Comfortable cotton tee
+  price: 25.00
+  stock_quantity: 100
+  category: clothing
+  published_at: <%= Time.current %>
+  is_featured: true
+  is_admin: false
+
+no_category_product:
+  name: Product With Missing Category
+  description: This product has no assigned category
+  price: 10.00
+  stock_quantity: 10
+  category: 
+  published_at: <%= Time.current %>
+  is_featured: false
+  is_admin: false
+
+admin_product:
+  name: Secret Admin Product
+  description: Only admins should manage this
+  price: 999.00
+  stock_quantity: 1
+  category: electronics
+  published_at: <%= Time.current %>
+  is_featured: false
+  is_admin: true

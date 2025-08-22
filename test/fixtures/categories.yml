@@ -1,0 +1,12 @@
+electronics:
+  name: Electronics
+
+books:
+  name: Books
+
+clothing:
+  name: Clothing
+
+# Category with no products to test edge cases
+empty_category:
+  name: Empty Category
