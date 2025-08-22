@@ -7,13 +7,13 @@ module Api
       def index
         # BUG: No error handling for database connection issues
         # BUG: No pagination implemented (Task 3.1 requirement)
-        @categories = Category.all
+        @categories = Category.includes(:products)
 
         render json: @categories.map { |category|
           {
             id: category.id,
             name: category.name,
-            products_count: category.products.count, # This could cause N+1 if not careful
+            products_count: category.products.size, # Use size instead of count to avoid N+1
             created_at: category.created_at,
             updated_at: category.updated_at
           }
@@ -23,7 +23,7 @@ module Api
       # GET /api/v1/categories/:id
       def show
         # BUG: No error handling for non-existent records
-        @category = Category.find(params[:id])
+        @category = Category.includes(:products).find(params[:id])
 
         render json: {
           id: @category.id,
@@ -41,8 +41,7 @@ module Api
 
       # POST /api/v1/categories
       def create
-        # BUG: Mass assignment vulnerability - no strong parameters
-        @category = Category.new(params[:category])
+        @category = Category.new(category_params)
 
         if @category.save
           render json: @category, status: :created
@@ -55,8 +54,7 @@ module Api
       def update
         @category = Category.find(params[:id])
 
-        # BUG: Mass assignment vulnerability - using permit!
-        if @category.update(params.permit!)
+        if @category.update(category_params)
           render json: @category
         else
           render json: @category.errors, status: :unprocessable_content
@@ -67,17 +65,20 @@ module Api
       def destroy
         @category = Category.find(params[:id])
 
-        # BUG: No handling of dependent records
-        # If category has products, this will fail due to foreign key constraint
-        @category.destroy
-        head :no_content
+        begin
+          @category.destroy
+          head :no_content
+        rescue ActiveRecord::InvalidForeignKey
+          render json: { error: "Cannot delete category with associated products" },
+                 status: :unprocessable_content
+        end
       end
 
-      # Private method for strong parameters (this would be the fix)
-      # private
-      # def category_params
-      #   params.require(:category).permit(:name)
-      # end
+      private
+
+      def category_params
+        params.require(:category).permit(:name)
+      end
     end
   end
 end

@@ -20,6 +20,12 @@ Rails.application.routes.draw do
   # Health check endpoint (example from provided `rails-frontend`)
   get "health" => "application#health"
 
+  # Serve Swagger documentation
+  get "api-docs" => redirect("/api-docs.html")
+  get "swagger/v1/swagger.json" => proc { |env|
+    [ 200, { "Content-Type" => "application/json" }, [ File.read(Rails.root.join("swagger/v1/swagger.json")) ] ]
+  }
+
   # Root URL (example from provided `rails-frontend`)
   root "application#index"
 end
