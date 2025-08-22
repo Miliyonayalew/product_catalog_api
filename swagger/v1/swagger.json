@@ -1,0 +1,564 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Product Catalog API",
+    "description": "A robust Rails API for managing products and categories with advanced features including filtering, pagination, and featuring functionality.",
+    "version": "v1",
+    "contact": {
+      "name": "API Support",
+      "email": "support@example.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.example.com",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Products",
+      "description": "Product management operations"
+    },
+    {
+      "name": "Categories",
+      "description": "Category management operations"
+    }
+  ],
+  "paths": {
+    "/api/v1/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Retrieves products with pagination and filtering",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "description": "Filter products by category ID",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Items per page (max 100)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 25,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "description": { "type": "string" },
+                          "price": { "type": "string" },
+                          "stock_quantity": { "type": "integer" },
+                          "category_id": { "type": "integer", "nullable": true },
+                          "category_name": { "type": "string", "nullable": true },
+                          "published_at": { "type": "string", "format": "date-time", "nullable": true },
+                          "is_featured": { "type": "boolean" },
+                          "is_admin": { "type": "boolean" }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "current_page": { "type": "integer" },
+                        "total_pages": { "type": "integer" },
+                        "total_count": { "type": "integer" },
+                        "per_page": { "type": "integer" },
+                        "next_page": { "type": "integer", "nullable": true },
+                        "prev_page": { "type": "integer", "nullable": true }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "products": [
+                    {
+                      "id": 1,
+                      "name": "Laptop Pro X",
+                      "description": "Powerful laptop for professionals",
+                      "price": "1200.0",
+                      "stock_quantity": 50,
+                      "category_id": 1,
+                      "category_name": "Electronics",
+                      "published_at": "2023-07-13T00:00:00.000Z",
+                      "is_featured": false,
+                      "is_admin": false
+                    }
+                  ],
+                  "pagination": {
+                    "current_page": 1,
+                    "total_pages": 5,
+                    "total_count": 100,
+                    "per_page": 25,
+                    "next_page": 2,
+                    "prev_page": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Creates a new product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "product": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "New Product" },
+                      "description": { "type": "string", "example": "Product description" },
+                      "price": { "type": "number", "example": 99.99 },
+                      "stock_quantity": { "type": "integer", "example": 10 },
+                      "category_id": { "type": "integer", "example": 1 },
+                      "published_at": { "type": "string", "format": "date-time", "example": "2023-07-13T00:00:00.000Z" },
+                      "is_featured": { "type": "boolean", "example": false }
+                    },
+                    "required": ["name", "price", "stock_quantity"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "description": { "type": "string" },
+                    "price": { "type": "string" },
+                    "stock_quantity": { "type": "integer" },
+                    "category_id": { "type": "integer", "nullable": true },
+                    "category_name": { "type": "string", "nullable": true },
+                    "published_at": { "type": "string", "format": "date-time", "nullable": true },
+                    "is_featured": { "type": "boolean" },
+                    "is_admin": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Product ID",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Products"],
+        "summary": "Retrieves a specific product",
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "description": { "type": "string" },
+                    "price": { "type": "string" },
+                    "stock_quantity": { "type": "integer" },
+                    "category_id": { "type": "integer", "nullable": true },
+                    "category_name": { "type": "string", "nullable": true },
+                    "published_at": { "type": "string", "format": "date-time", "nullable": true },
+                    "is_featured": { "type": "boolean" },
+                    "is_admin": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Products"],
+        "summary": "Updates a product",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "product": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "Updated Product" },
+                      "description": { "type": "string", "example": "Updated description" },
+                      "price": { "type": "number", "example": 149.99 },
+                      "stock_quantity": { "type": "integer", "example": 20 },
+                      "category_id": { "type": "integer", "example": 1 },
+                      "published_at": { "type": "string", "format": "date-time", "example": "2023-07-13T00:00:00.000Z" },
+                      "is_featured": { "type": "boolean", "example": true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated successfully"
+          },
+          "404": {
+            "description": "Product not found"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Deletes a product",
+        "responses": {
+          "204": {
+            "description": "Product deleted successfully"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}/feature": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Product ID",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "patch": {
+        "tags": ["Products"],
+        "summary": "Marks a product as featured",
+        "responses": {
+          "200": {
+            "description": "Product featured successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Product successfully featured" },
+                    "product": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "is_featured": { "type": "boolean" },
+                        "featured_at": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{id}/unfeature": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Product ID",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "patch": {
+        "tags": ["Products"],
+        "summary": "Removes featured status from a product",
+        "responses": {
+          "200": {
+            "description": "Product unfeatured successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Product successfully unfeatured" },
+                    "product": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "name": { "type": "string" },
+                        "is_featured": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Retrieves all categories",
+        "responses": {
+          "200": {
+            "description": "Categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": { "type": "string" },
+                      "created_at": { "type": "string", "format": "date-time" },
+                      "updated_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Creates a new category",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "New Category" }
+                    },
+                    "required": ["name"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Category created successfully"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    },
+    "/api/v1/categories/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "description": "Category ID",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Retrieves a specific category",
+        "responses": {
+          "200": {
+            "description": "Category found"
+          },
+          "404": {
+            "description": "Category not found"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Categories"],
+        "summary": "Updates a category",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string", "example": "Updated Category" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated successfully"
+          },
+          "404": {
+            "description": "Category not found"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Deletes a category",
+        "responses": {
+          "204": {
+            "description": "Category deleted successfully"
+          },
+          "404": {
+            "description": "Category not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "string" },
+          "stock_quantity": { "type": "integer" },
+          "category_id": { "type": "integer", "nullable": true },
+          "category_name": { "type": "string", "nullable": true },
+          "published_at": { "type": "string", "format": "date-time", "nullable": true },
+          "is_featured": { "type": "boolean" },
+          "is_admin": { "type": "boolean" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "current_page": { "type": "integer" },
+          "total_pages": { "type": "integer" },
+          "total_count": { "type": "integer" },
+          "per_page": { "type": "integer" },
+          "next_page": { "type": "integer", "nullable": true },
+          "prev_page": { "type": "integer", "nullable": true }
+        }
+      }
+    }
+  }
+}
