@@ -1,5 +1,3 @@
-# This model has a `belongs_to` association that, combined with the controller,
-# can lead to the N+1 problem and `nil` category names.
 class Product < ApplicationRecord
   # BUG: `optional: true` allows products without a category.
   # This combined with the N+1 in the controller will manifest the bug.
