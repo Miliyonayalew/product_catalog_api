@@ -8,7 +8,7 @@ module Api
         # BUG: No error handling for database connection issues
         # BUG: No pagination implemented (Task 3.1 requirement)
         @categories = Category.all
-        
+
         render json: @categories.map { |category|
           {
             id: category.id,
@@ -24,7 +24,7 @@ module Api
       def show
         # BUG: No error handling for non-existent records
         @category = Category.find(params[:id])
-        
+
         render json: {
           id: @category.id,
           name: @category.name,
@@ -43,30 +43,30 @@ module Api
       def create
         # BUG: Mass assignment vulnerability - no strong parameters
         @category = Category.new(params[:category])
-        
+
         if @category.save
           render json: @category, status: :created
         else
-          render json: @category.errors, status: :unprocessable_entity
+          render json: @category.errors, status: :unprocessable_content
         end
       end
 
       # PATCH/PUT /api/v1/categories/:id
       def update
         @category = Category.find(params[:id])
-        
+
         # BUG: Mass assignment vulnerability - using permit!
         if @category.update(params.permit!)
           render json: @category
         else
-          render json: @category.errors, status: :unprocessable_entity
+          render json: @category.errors, status: :unprocessable_content
         end
       end
 
       # DELETE /api/v1/categories/:id
       def destroy
         @category = Category.find(params[:id])
-        
+
         # BUG: No handling of dependent records
         # If category has products, this will fail due to foreign key constraint
         @category.destroy
@@ -80,4 +80,4 @@ module Api
       # end
     end
   end
-end 
+end

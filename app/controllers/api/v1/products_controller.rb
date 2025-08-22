@@ -90,7 +90,7 @@ module Api
         if @product.save
           render json: @product, status: :created
         else
-          render json: @product.errors, status: :unprocessable_entity
+          render json: @product.errors, status: :unprocessable_content
         end
       end
 
@@ -110,7 +110,7 @@ module Api
           Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
-          render json: @product.errors, status: :unprocessable_entity
+          render json: @product.errors, status: :unprocessable_content
         end
       end
 
@@ -169,7 +169,7 @@ module Api
           render json: {
             error: "Failed to feature product",
             errors: @product.errors.full_messages
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 
@@ -215,7 +215,7 @@ module Api
           render json: {
             error: "Failed to unfeature product",
             errors: @product.errors.full_messages
-          }, status: :unprocessable_entity
+          }, status: :unprocessable_content
         end
       end
 

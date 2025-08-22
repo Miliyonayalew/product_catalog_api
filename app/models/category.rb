@@ -4,4 +4,4 @@ class Category < ApplicationRecord
 
   # name:string
   validates :name, presence: true, uniqueness: true
-end 
+end
