@@ -9,7 +9,9 @@ Rails.application.routes.draw do
       resources :products do
         # Custom member route for featuring a product (for Task 3.2)
         # This route is correctly defined, but the controller action needs fixing.
+        # Custom member routes for featuring/unfeaturing products (for Task 3.2)
         patch :feature, on: :member
+        patch :unfeature, on: :member
       end
       resources :categories # Full CRUD for categories
     end
