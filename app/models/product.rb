@@ -25,4 +25,10 @@ class Product < ApplicationRecord
   def category_name
     category&.name
   end
-end 
+
+  # Scopes for filtering
+  scope :by_category, ->(category_id) { where(category_id: category_id) if category_id.present? }
+  scope :featured, -> { where(is_featured: true) }
+  scope :published, -> { where.not(published_at: nil) }
+  scope :in_stock, -> { where("stock_quantity > 0") }
+end
