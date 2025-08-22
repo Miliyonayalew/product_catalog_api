@@ -19,6 +19,11 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Fix logger gem conflict
+        run: |
+          bundle config set --local deployment false
+          bundle install --jobs 4 --retry 3
+
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
 
@@ -33,6 +38,11 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Fix logger gem conflict
+        run: |
+          bundle config set --local deployment false
+          bundle install --jobs 4 --retry 3
 
       - name: Lint code for consistent style
         run: bin/rubocop -f github
@@ -58,6 +68,11 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Fix logger gem conflict
+        run: |
+          bundle config set --local deployment false
+          bundle install --jobs 4 --retry 3
 
       - name: Run tests
         env:
