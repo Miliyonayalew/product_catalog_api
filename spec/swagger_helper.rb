@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'test_helper'
+# RSwag runs under RSpec; avoid requiring Minitest test_helper here.
 
 RSpec.configure do |config|
   # Specify a root folder where Swagger JSON files are generated
@@ -15,7 +15,7 @@ RSpec.configure do |config|
   # document below. You can override this behavior by adding a openapi_spec tag to the
   # the root example_group in your specs, e.g. describe '...', openapi_spec: 'v2/swagger.json'
   config.openapi_specs = {
-    'v1/swagger.yaml' => {
+    'v1/swagger.json' => {
       openapi: '3.0.1',
       info: {
         title: 'Product Catalog API',
@@ -41,6 +41,35 @@ RSpec.configure do |config|
         }
       ],
       paths: {},
+      components: {
+        parameters: {
+          AdminTokenHeader: {
+            name: 'X-Admin-Token',
+            in: :header,
+            required: false,
+            schema: { type: :string },
+            description: 'Admin token required for feature/unfeature endpoints'
+          }
+        },
+        schemas: {
+          Error: {
+            type: :object,
+            properties: {
+              error: { type: :string },
+              message: { type: :string }
+            },
+            required: %w[error message]
+          },
+          ValidationError: {
+            type: :object,
+            properties: {
+              error: { type: :string },
+              errors: { type: :array, items: { type: :string } }
+            },
+            required: %w[error errors]
+          }
+        }
+      },
               servers: [
           {
             url: 'http://localhost:3000',
@@ -54,9 +83,6 @@ RSpec.configure do |config|
     }
   }
 
-  # Specify the format of the output Swagger file when running 'rswag:specs:swaggerize'.
-  # The openapi_specs configuration option has the filename including format in
-  # the key, this may want to be changed to avoid putting yaml in json files.
-  # Defaults to json. Accepts ':json' and ':yaml'.
-  config.openapi_format = :yaml
+  # Output Swagger as JSON to match routes that serve swagger/v1/swagger.json
+  config.openapi_format = :json
 end

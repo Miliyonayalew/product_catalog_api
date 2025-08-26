@@ -48,6 +48,12 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
 
         run_test!
       end
+
+      response '400', 'bad request - invalid filters or pagination' do
+        schema '$ref' => '#/components/schemas/Error'
+        let(:page) { 0 }
+        run_test!
+      end
     end
 
     post 'Creates a new product' do
@@ -81,6 +87,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
       end
 
       response '422', 'invalid request' do
+        schema '$ref' => '#/components/schemas/ValidationError'
         let(:product) { { product: { name: '', price: -10 } } }
 
         run_test!
@@ -117,6 +124,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
       end
 
       response '404', 'product not found' do
+        schema '$ref' => '#/components/schemas/Error'
         let(:id) { 99999 }
 
         run_test!
@@ -155,6 +163,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
       end
 
       response '422', 'invalid request' do
+        schema '$ref' => '#/components/schemas/ValidationError'
         let(:category) { Category.create!(name: 'Electronics') }
         let(:product_record) { Product.create!(name: 'Test Product', price: 100, stock_quantity: 10, category: category) }
         let(:id) { product_record.id }
@@ -164,6 +173,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
       end
 
       response '404', 'product not found' do
+        schema '$ref' => '#/components/schemas/Error'
         let(:id) { 99999 }
         let(:product) { { product: { name: 'Updated Product' } } }
 
@@ -182,6 +192,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
       end
 
       response '404', 'product not found' do
+        schema '$ref' => '#/components/schemas/Error'
         let(:id) { 99999 }
 
         run_test!
@@ -191,6 +202,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
 
   path '/api/v1/products/{id}/feature' do
     parameter name: :id, in: :path, type: :integer, required: true
+    parameter '$ref' => '#/components/parameters/AdminTokenHeader'
 
     patch 'Marks a product as featured' do
       tags 'Products'
@@ -237,7 +249,15 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
         run_test!
       end
 
+      response '403', 'forbidden (admin token required)' do
+        schema '$ref' => '#/components/schemas/Error'
+        let(:category) { Category.create!(name: 'Electronics') }
+        let(:id) { Product.create!(name: 'Test Product', price: 100, stock_quantity: 10, category: category).id }
+        run_test!
+      end
+
       response '404', 'product not found' do
+        schema '$ref' => '#/components/schemas/Error'
         let(:id) { 99999 }
 
         run_test!
@@ -247,6 +267,7 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
 
   path '/api/v1/products/{id}/unfeature' do
     parameter name: :id, in: :path, type: :integer, required: true
+    parameter '$ref' => '#/components/parameters/AdminTokenHeader'
 
     patch 'Removes featured status from a product' do
       tags 'Products'
@@ -292,7 +313,15 @@ RSpec.describe 'Api::V1::Products', swagger_doc: 'v1/swagger.json' do
         run_test!
       end
 
+      response '403', 'forbidden (admin token required)' do
+        schema '$ref' => '#/components/schemas/Error'
+        let(:category) { Category.create!(name: 'Electronics') }
+        let(:id) { Product.create!(name: 'Test Product', price: 100, stock_quantity: 10, category: category).id }
+        run_test!
+      end
+
       response '404', 'product not found' do
+        schema '$ref' => '#/components/schemas/Error'
         let(:id) { 99999 }
 
         run_test!

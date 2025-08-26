@@ -20,14 +20,60 @@ module Api
         # @products = Product.all
         @products = Product.includes(:category)
 
-        # Apply filters
-        @products = @products.by_category(params[:category_id])
+        # Apply filters with error handling
+        if params[:category_id].present?
+          begin
+            category_id = Integer(params[:category_id])
+            unless Category.exists?(category_id)
+              return render json: {
+                error: "Invalid category_id",
+                message: "Category with ID #{category_id} does not exist"
+              }, status: :bad_request
+            end
+            @products = @products.by_category(category_id)
+          rescue ArgumentError
+            return render json: {
+              error: "Invalid category_id",
+              message: "category_id must be a valid integer"
+            }, status: :bad_request
+          end
+        end
 
-        # Apply pagination
-        page = params[:page]&.to_i || 1
-        per_page = [ params[:per_page]&.to_i || 25, 100 ].min # Cap at 100 items per page
+        # Apply pagination with error handling
+        begin
+          page = params[:page]&.to_i || 1
+          per_page = params[:per_page]&.to_i || 25
 
-        @products = @products.page(page).per(per_page)
+          # Validate pagination parameters
+          if page < 1
+            return render json: {
+              error: "Invalid page parameter",
+              message: "Page must be greater than 0"
+            }, status: :bad_request
+          end
+
+          if per_page < 1 || per_page > 100
+            return render json: {
+              error: "Invalid per_page parameter",
+              message: "per_page must be between 1 and 100"
+            }, status: :bad_request
+          end
+
+          @products = @products.page(page).per(per_page)
+
+          # Check if page is out of range
+          if page > @products.total_pages && @products.total_pages > 0
+            return render json: {
+              error: "Page out of range",
+              message: "Page #{page} does not exist. Total pages: #{@products.total_pages}"
+            }, status: :bad_request
+          end
+        rescue => e
+          return render json: {
+            error: "Pagination error",
+            message: e.message
+          }, status: :bad_request
+        end
 
         # Build response with pagination metadata
         render json: {
@@ -39,7 +85,7 @@ module Api
               price: product.price,
               stock_quantity: product.stock_quantity,
               category_id: product.category_id,
-              category_name: product.category_name,
+              category_name: product.category&.name,  # Use eager loaded association directly
               published_at: product.published_at,
               is_featured: product.is_featured,
               is_admin: product.is_admin
@@ -58,7 +104,14 @@ module Api
 
       # GET /api/v1/products/:id
       def show
-        @product = Product.find(params[:id])
+        begin
+          @product = Product.find(params[:id])
+        rescue ActiveRecord::RecordNotFound
+          return render json: {
+            error: "Product not found",
+            message: "Product with ID #{params[:id]} does not exist"
+          }, status: :not_found
+        end
 
         # FIXED: Add HTTP-level caching headers for better performance
         fresh_when(@product, etag: @product.cache_key)
@@ -71,7 +124,7 @@ module Api
           price: @product.price,
           stock_quantity: @product.stock_quantity,
           category_id: @product.category_id,
-          category_name: @product.category_name,
+          category_name: @product.category&.name,  # Use association directly
           published_at: @product.published_at,
           is_featured: @product.is_featured,
           is_admin: @product.is_admin
@@ -90,13 +143,29 @@ module Api
         if @product.save
           render json: @product, status: :created
         else
-          render json: @product.errors, status: :unprocessable_content
+          render json: {
+            error: "Validation failed",
+            errors: @product.errors.full_messages
+          }, status: :unprocessable_content
         end
+      rescue ActionController::ParameterMissing => e
+        render json: {
+          error: "Missing parameters",
+          message: e.message
+        }, status: :bad_request
       end
 
       # PATCH/PUT /api/v1/products/:id
       def update
-        @product = Product.find(params[:id])
+        begin
+          @product = Product.find(params[:id])
+        rescue ActiveRecord::RecordNotFound
+          return render json: {
+            error: "Product not found",
+            message: "Product with ID #{params[:id]} does not exist"
+          }, status: :not_found
+        end
+
         # BUG 2.2: Mass assignment vulnerability.
         # This allows any attribute in the `product` hash to be set,
         # including potentially malicious or unintended ones.
@@ -110,13 +179,29 @@ module Api
           Rails.cache.delete("product_#{@product.id}")
           render json: @product
         else
-          render json: @product.errors, status: :unprocessable_content
+          render json: {
+            error: "Validation failed",
+            errors: @product.errors.full_messages
+          }, status: :unprocessable_content
         end
+      rescue ActionController::ParameterMissing => e
+        render json: {
+          error: "Missing parameters",
+          message: e.message
+        }, status: :bad_request
       end
 
       # DELETE /api/v1/products/:id
       def destroy
-        @product = Product.find(params[:id])
+        begin
+          @product = Product.find(params[:id])
+        rescue ActiveRecord::RecordNotFound
+          return render json: {
+            error: "Product not found",
+            message: "Product with ID #{params[:id]} does not exist"
+          }, status: :not_found
+        end
+
         @product.destroy
         # FIXED: Cache invalidation using Rails.cache.delete (works in API mode)
         Rails.cache.delete("product_#{@product.id}")
@@ -126,14 +211,22 @@ module Api
       # PATCH /api/v1/products/:id/feature
       # Custom action for featuring a product (for Task 3.2)
       def feature
-        @product = Product.find(params[:id])
+        begin
+          @product = Product.find(params[:id])
+        rescue ActiveRecord::RecordNotFound
+          return render json: {
+            error: "Product not found",
+            message: "Product with ID #{params[:id]} does not exist"
+          }, status: :not_found
+        end
 
-        # TODO: Add proper authorization here
-        # In a real application, you would check if the current user is an admin:
-        # unless current_user&.admin?
-        #   render json: { error: 'Unauthorized' }, status: :forbidden
-        #   return
-        # end
+        # IMPROVED: Basic authorization check
+        unless admin_authorized?
+          return render json: {
+            error: "Unauthorized",
+            message: "Admin privileges required to feature products"
+          }, status: :forbidden
+        end
 
         # Check if product is already featured
         if @product.is_featured?
@@ -176,14 +269,22 @@ module Api
       # PATCH /api/v1/products/:id/unfeature
       # Custom action for unfeaturing a product
       def unfeature
-        @product = Product.find(params[:id])
+        begin
+          @product = Product.find(params[:id])
+        rescue ActiveRecord::RecordNotFound
+          return render json: {
+            error: "Product not found",
+            message: "Product with ID #{params[:id]} does not exist"
+          }, status: :not_found
+        end
 
-        # TODO: Add proper authorization here
-        # In a real application, you would check if the current user is an admin:
-        # unless current_user&.admin?
-        #   render json: { error: 'Unauthorized' }, status: :forbidden
-        #   return
-        # end
+        # IMPROVED: Basic authorization check
+        unless admin_authorized?
+          return render json: {
+            error: "Unauthorized",
+            message: "Admin privileges required to unfeature products"
+          }, status: :forbidden
+        end
 
         # Check if product is not featured
         unless @product.is_featured?
@@ -229,6 +330,14 @@ module Api
       def product_params
         # Only permit safe attributes - is_admin is intentionally excluded for security
         params.require(:product).permit(:name, :description, :price, :stock_quantity, :category_id, :published_at, :is_featured)
+      end
+
+      # IMPROVED: Basic authorization method
+      def admin_authorized?
+        # For demo purposes, check for admin header or parameter
+        # In a real application, this would check current_user.admin? or similar
+        request.headers["X-Admin-Token"] == "admin-secret-token" ||
+        params[:admin_token] == "admin-secret-token"
       end
     end
   end
