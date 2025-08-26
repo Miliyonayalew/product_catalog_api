@@ -5,15 +5,16 @@ A robust Rails API for managing products and categories with advanced features i
 ## 🚀 Features
 
 - **RESTful API** with proper versioning (`/api/v1/`)
-- **Product Management** - Full CRUD operations
+- **Product Management** - Full CRUD operations with comprehensive error handling
 - **Category Management** - Organize products by categories
-- **Advanced Filtering** - Filter products by category
-- **Pagination** - Efficient data pagination with metadata
+- **Advanced Filtering** - Filter products by category with validation
+- **Pagination** - Efficient data pagination with metadata (1-100 items per page)
 - **Product Featuring** - Mark products as featured (admin only)
 - **Security** - Strong parameters, mass assignment protection, admin authorization
-- **Performance** - N+1 query prevention, caching
-- **Testing** - Comprehensive test suite with 47 tests
+- **Performance** - N+1 query prevention, HTTP caching, cache invalidation
+- **Testing** - Comprehensive test suite with 64 tests covering all scenarios
 - **Documentation** - Interactive Swagger/OpenAPI documentation
+- **Error Handling** - Detailed error responses with proper HTTP status codes
 
 ## 🔐 Authorization
 
@@ -125,7 +126,7 @@ curl -X PATCH \
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all tests (64 tests)
 rails test
 
 # Run specific test types
@@ -134,89 +135,140 @@ rails test test/controllers/
 
 # Run specific test file
 rails test test/controllers/api/v1/products_controller_test.rb
-
-# Run specific test method
-rails test test/models/product_test.rb -n test_should_require_name
 ```
 
 ### Test Coverage
+- **64 total tests** passing
+- **36 controller tests** with comprehensive coverage
+- **Error handling tests** for all edge cases
+- **Authorization tests** for admin endpoints
+- **N+1 query prevention tests**
+- **Cache invalidation tests**
+- **Strong parameters security tests**
 
-- **47 tests, 141 assertions**
-- **Model Tests**: 22 tests covering validations, associations, scopes
-- **Controller Tests**: 25 tests covering API endpoints, filtering, pagination
-- **Bug Fix Verification**: N+1 query prevention, mass assignment protection
+
+
+
+## ⚠️ Error Handling
+
+The API provides comprehensive error handling with consistent response formats:
+
+### Error Response Format
+```json
+{
+  "error": "Error type",
+  "message": "Detailed error message"
+}
+```
+
+### Common Error Codes
+- **400 Bad Request**: Invalid parameters (category_id, pagination)
+- **403 Forbidden**: Missing or invalid admin token for feature/unfeature
+- **404 Not Found**: Resource not found
+- **422 Unprocessable Entity**: Validation errors
+
+### Validation Error Format
+```json
+{
+  "error": "Validation failed",
+  "errors": ["Name can't be blank", "Price must be greater than 0"]
+}
+```
+
+## 🚀 Performance Features
+
+### N+1 Query Prevention
+- Eager loading with `Product.includes(:category)`
+- Optimized JSON serialization using eager loaded associations
+- Bullet gem integration for query optimization
+
+### Caching Strategy
+- HTTP-level caching with `ETag` and `Cache-Control` headers
+- Cache invalidation on product updates, deletes, and featuring
+- 1-hour cache duration for product details
+
+### Database Optimization
+- Proper database indexes
+- Efficient pagination with Kaminari gem
+- Optimized queries with ActiveRecord scopes
 
 ## 🔒 Security Features
 
-### Mass Assignment Protection
-- Strong parameters prevent unauthorized attribute assignment
-- `is_admin` attribute is protected from API manipulation
+### Strong Parameters
+- Prevents mass assignment vulnerabilities
+- Explicitly permits only safe attributes
+- Excludes sensitive fields like `is_admin`
+
+### Authorization
+- Admin token validation for sensitive operations
+- Multiple authorization methods (header/parameter)
+- Proper HTTP status codes for unauthorized access
 
 ### Input Validation
-- Product name is required
-- Price and stock quantity must be non-negative
-- Category associations are validated
-
-### Error Handling
-- Proper HTTP status codes
-- Structured error responses
-- No sensitive information exposure in production
-
-## ⚡ Performance Optimizations
-
-### N+1 Query Prevention
-- Eager loading with `includes(:category)`
-- Efficient category name retrieval
-- Optimized database queries
-
-### Caching
-- HTTP-level caching headers
-- Cache invalidation on updates
-- Production-ready cache store configuration
-
-### Pagination
-- Efficient pagination with Kaminari gem
-- Configurable page sizes (max 100 items)
-- Pagination metadata in responses
+- Comprehensive parameter validation
+- Type checking for all inputs
+- Range validation for pagination parameters
 
 ## 🏗️ Architecture
 
 ### Models
-
-#### Product
-- `belongs_to :category` (optional)
-- Validations for name, price, stock_quantity
-- Scopes: `by_category`, `featured`, `published`, `in_stock`
-- Methods: `category_name`, `is_featured?`
-
-#### Category
-- `has_many :products`
-- Validations for name uniqueness
-- Foreign key constraints
+- **Product**: Core product entity with associations and scopes
+- **Category**: Category management with product relationships
 
 ### Controllers
+- **API Versioning**: Namespaced under `/api/v1/`
+- **Error Handling**: Comprehensive exception handling
+- **Response Formatting**: Consistent JSON responses
 
-#### Api::V1::ProductsController
-- RESTful CRUD operations
-- Custom actions: `feature`, `unfeature`
-- Strong parameter protection
-- Error handling and status codes
+### Database
+- **SQLite**: Development database
+- **Migrations**: Proper schema management
+- **Seeds**: Sample data for development
 
-#### Api::V1::CategoriesController
-- Standard CRUD operations
-- Proper error handling
+## 🚀 Deployment
 
-## 🔧 Configuration
+### Production Considerations
+- **Environment Configuration**: Production-specific settings
+- **Database**: PostgreSQL for production
+- **Caching**: Redis for production caching
+- **SSL**: Force SSL in production
+- **Logging**: Structured logging with request IDs
 
 ### Environment Variables
-
 ```bash
 RAILS_ENV=production
-RAILS_LOG_LEVEL=info
 DATABASE_URL=postgresql://...
+REDIS_URL=redis://...
+RAILS_LOG_LEVEL=info
 ```
 
-### Production Settings
+## 🤝 Contributing
 
-- SSL enforcement (`force_ssl = true`)
-- Eager loading (`
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Write tests for new features
+- Follow Rails conventions
+- Use strong parameters for all inputs
+- Add proper error handling
+- Update documentation
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the [FAQ](docs/FAQ.md)
+- Review the [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+
+---
+
+**Built with ❤️ using Rails 8.0.2**
