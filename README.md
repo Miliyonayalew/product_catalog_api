@@ -9,12 +9,49 @@ A robust Rails API for managing products and categories with advanced features i
 - **Category Management** - Organize products by categories
 - **Advanced Filtering** - Filter products by category
 - **Pagination** - Efficient data pagination with metadata
-- **Product Featuring** - Mark products as featured
-- **Security** - Strong parameters, mass assignment protection
+- **Product Featuring** - Mark products as featured (admin only)
+- **Security** - Strong parameters, mass assignment protection, admin authorization
 - **Performance** - N+1 query prevention, caching
 - **Testing** - Comprehensive test suite with 47 tests
 - **Documentation** - Interactive Swagger/OpenAPI documentation
 
+## 🔐 Authorization
+
+### Admin Endpoints
+The following endpoints require admin authorization:
+- `PATCH /api/v1/products/:id/feature` - Mark a product as featured
+- `PATCH /api/v1/products/:id/unfeature` - Remove featured status from a product
+
+### Authorization Methods
+You can provide admin authorization in two ways:
+
+1. **HTTP Header** (Recommended):
+   ```bash
+   curl -X PATCH \
+     -H "X-Admin-Token: admin-secret-token" \
+     http://localhost:3000/api/v1/products/1/feature
+   ```
+
+2. **Query Parameter**:
+   ```bash
+   curl -X PATCH \
+     "http://localhost:3000/api/v1/products/1/feature?admin_token=admin-secret-token"
+   ```
+
+### Example Usage
+```bash
+# Feature a product
+curl -X PATCH \
+  -H "X-Admin-Token: admin-secret-token" \
+  -H "Content-Type: application/json" \
+  http://localhost:3000/api/v1/products/1/feature
+
+# Unfeature a product
+curl -X PATCH \
+  -H "X-Admin-Token: admin-secret-token" \
+  -H "Content-Type: application/json" \
+  http://localhost:3000/api/v1/products/1/unfeature
+```
 
 ## 🛠️ Setup & Installation
 
@@ -182,38 +219,4 @@ DATABASE_URL=postgresql://...
 ### Production Settings
 
 - SSL enforcement (`force_ssl = true`)
-- Eager loading (`eager_load = true`)
-- Persistent caching (`solid_cache_store`)
-- Structured logging with request IDs
-- Background job processing (`solid_queue`)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Write tests for new features
-- Follow Rails conventions
-- Use strong parameters for all inputs
-- Add proper error handling
-- Update documentation
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the [FAQ](docs/FAQ.md)
-- Review the [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
-
----
-
-**Built with ❤️ using Rails 8.0.2**
+- Eager loading (`
